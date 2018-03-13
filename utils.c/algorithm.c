@@ -1,0 +1,181 @@
+/**
+ * date: 2018-03-13
+ * contributors(s):
+ *   Nate Mathews, njm3308@rit.edu
+ * description:
+ *   implementation of least witness algorithm
+ *   some additional optimization could be done, however the
+ *   current state of the algorithm is probably adequate
+ */
+
+#include <string.h>
+#include <malloc.h>
+#include <stdlib.h>
+#include "../utils.h/algorithm.h"
+
+/* SIZE is the number of fields of a rule, the number here must
+   match the number of for loops used when testing candidates */
+#define SIZE ((uint32_t) 5)
+
+// with slicing wrapper
+uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *va, uint32_t count)
+{
+    uint32_t lo_s[SIZE*count],
+             hi_s[SIZE*count],
+             va_s[count];
+    /* copy property to first 'rule' slot */
+    va_s[0] = va[0];
+    for (int k=0; k<SIZE; k++)
+    {
+        lo_s[k] = lo[k];
+        hi_s[k] = hi[k];
+    }
+    /* form and test slices */
+    uint32_t pos = 0, count_s;
+    while (pos+1 < count)
+    {
+        count_s = 1; // count of rules in slice
+        /* loop through rules and build slice */
+        for (uint32_t i=1; i<count; i++)
+        {
+            /* if agreeing rule, add to slice  */
+            if (va[i] == va[0])
+            {
+                va_s[count_s] = va[i];
+                for (int k=0; k<SIZE; k++)
+                {
+                    lo_s[SIZE*count_s+k] = lo[SIZE*i+k];
+                    hi_s[SIZE*count_s+k] = hi[SIZE*i+k];
+                }
+                count_s++;
+            }
+
+            /* if disagree rule not yet reached, add to slice,
+             * project slice, run least_witness */
+            if (va[i] != va[0] && pos < i)
+            {
+                // add slice's disagree rule
+                for (int k=0; k<SIZE; k++)
+                {
+                    lo_s[SIZE*count_s+k] = lo[SIZE*i+k];
+                    hi_s[SIZE*count_s+k] = hi[SIZE*i+k];
+                    va_s[count_s] = va[i];
+                }
+                count_s++;
+
+                /* project agreeing rules over disagree rule */
+                for (uint32_t l=1; l<count_s; l++)
+                {
+                    for (uint32_t j=0; j<SIZE; j++)
+                    {
+                        uint32_t z = (l*SIZE)+j;
+                        uint32_t k = ((count_s-1)*SIZE)+j;
+                        hi_s[z] = (hi_s[z] < hi_s[k]) ? hi_s[z] : hi_s[k];
+                        lo_s[z] = (lo_s[z] < lo_s[k]) ? lo_s[k] : lo_s[z];
+                    }
+                }
+
+                /* apply least witness algorithm on slice */
+                uint32_t* candidate = least_witness(lo_s, hi_s, va_s, count_s);
+                if (candidate != NULL)
+                {   // return candidate if found
+                    return candidate;
+                }
+            }
+
+            // set max position reached
+            if (i>pos)
+                pos = i;
+        }
+    }
+    return NULL;
+}
+
+// without slicing
+uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t count)
+{
+    /* do projection and end point generation  */
+    uint32_t set[SIZE*count];
+    uint32_t indices[SIZE];
+    for (int i=0; i<SIZE; i++) indices[i] = 0;
+
+    /* nested for loop first projects the current field onto the property
+     * then determines the end-point to add to the end point set */
+    for (int i=1; i<count; i++) // for each rule
+    {
+        uint32_t p = i*SIZE; // offset of rule start
+        for (int k=0; k<SIZE; k++)  // for each field in rule
+        {   /* do projection */
+            uint32_t z = p+k;   // current position
+            hi[z] = (hi[z] < hi[k]) ? hi[z] : hi[k]; // set hi to min
+            lo[z] = (lo[z] < lo[k]) ? lo[k] : lo[z]; // set lo to max
+
+            /* calculate end-point */
+            uint32_t endp, unique=1;
+            if (va[i] == va[0])
+                endp = hi[z]+1;
+            else
+                endp = lo[z];
+
+            // only add to set if end-point is within the property range
+            if (endp <= hi[k] && endp >= lo[k])
+            {
+                // check if value already exists in set
+                for (int j=0; j<indices[k]; j++)
+                {
+                    if (set[i*count+j] == endp)
+                    {
+                        unique = 0;
+                        break;
+                    }
+                }
+                if (unique) // add to set if unique
+                    set[k*count+indices[k]++] = endp;
+            }
+        }
+    }
+    /* test candidate witnesses */
+    uint32_t* candidate = malloc(SIZE * sizeof(uint32_t));
+    for (int k1=0; k1<indices[0]; k1++)
+    {
+        for (int k2=0; k2<indices[1]; k2++)
+        {
+            for (int k3=0; k3<indices[2]; k3++)
+            {
+                for (int k4=0; k4<indices[3]; k4++)
+                {
+                    for (int k5=0; k5<indices[4]; k5++)
+                    {   // form a unique witness
+                        candidate[0] = set[k1];
+                        candidate[1] = set[count+k2];
+                        candidate[2] = set[2*count+k2];
+                        candidate[3] = set[3*count+k2];
+                        candidate[4] = set[4*count+k2];
+                        for (int i=1; i<count; i++) // compare witness to each firewall
+                        {   // determine if candidate will hit the rule
+                            int hit = 1; // assume candidate will hit
+                            for (int j=0; j<SIZE; j++)
+                            {   // search for fields which miss
+                                if (candidate[j] > hi[i*SIZE+j]     // if candidate greater than max bound
+                                    || candidate[j] < lo[i*SIZE+j]) // or less than lower bound
+                                {   // candidate witness did not hit the rule
+                                    hit = 0;
+                                    break;
+                                }
+                            }
+                            if (hit)
+                            {   // if the matched rule conflicts, witness has been found
+                                if (va[0] != va[i])
+                                    return candidate;
+                                break; // otherwise, move to next candidate
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // no witness found
+    free(candidate);
+    return NULL;
+}
