@@ -9,15 +9,25 @@
 #include <Python.h>
 #include "utils.h/algorithm.h"
 
-/// maximum number of firewall rules allowed
-#define MAX_COUNT 1024
+/// max number of rules for starting buffers
+#define BUF_INIT 128
 
-/** buffers to hold rules */
-uint32_t lo[(SIZE * MAX_COUNT)], hi[(SIZE * MAX_COUNT)], va[MAX_COUNT], wit[SIZE]={0,0,0,0,0}, count=1;
+/** buffers to hold rules and counters for rule count and current buffer maximum */
+uint32_t *lo, *hi, *va, wit[SIZE]={0,0,0,0,0}, count=1, bufmax=BUF_INIT;
 
 /** adds a firewall rule to the global buffers */
 static PyObject *firewall_verifier_add(PyObject *self, PyObject *args)
 {
+    // check if buffer max has been reached
+    if (count%bufmax == 0)
+    {
+        /* grow buffers */
+        bufmax *= 2; // double buffer size
+        lo = PyMem_Realloc(lo, sizeof(*lo)*bufmax*SIZE);
+        hi = PyMem_Realloc(hi, sizeof(*hi)*bufmax*SIZE);
+        va = PyMem_Realloc(va, sizeof(*va)*bufmax);
+    }
+
     // extract firewall rule from arguments
     uint32_t i=count*SIZE;
     if (!PyArg_ParseTuple(args, "((II)(II)(II)(II)(II)I)",
@@ -35,7 +45,11 @@ static PyObject *firewall_verifier_add(PyObject *self, PyObject *args)
 /** resets the firewall index counter */
 static PyObject *firewall_verifier_clear(PyObject *self, PyObject *args)
 {
-    count=1;
+    count=1; bufmax=BUF_INIT;
+    /* shrink dynamic buffers */
+    lo = PyMem_Realloc(lo, sizeof(*lo)*bufmax*SIZE);
+    hi = PyMem_Realloc(hi, sizeof(*hi)*bufmax*SIZE);
+    va = PyMem_Realloc(va, sizeof(*va)*bufmax);
     return PyLong_FromLong(count-1); // return current size (0)
 }
 
@@ -109,6 +123,11 @@ PyMODINIT_FUNC PyInit_firewall_verifier(void)
     m = PyModule_Create(&firewall_verifier_module);
     if (m == NULL)
         return NULL;
+
+    /* initialize global buffers*/
+    lo = PyMem_Malloc(sizeof(*lo)*SIZE*bufmax);
+    hi = PyMem_Malloc(sizeof(*hi)*SIZE*bufmax);
+    va = PyMem_Malloc(sizeof(*va)*bufmax);
 
     PythonError = PyErr_NewException("firewall_verifier.error", NULL, NULL);
     Py_INCREF(PythonError);
