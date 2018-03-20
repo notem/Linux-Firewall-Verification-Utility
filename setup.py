@@ -9,6 +9,6 @@ module1 = Extension('firewall_verifier',
                     sources=['src/python.c', 'src/utils.c/algorithm.c'])
 
 setup(name='FirewallVerifier',
-        version='1.0',
-        description='This is a demo package',
-        ext_modules=[module1])
+      version='1.0',
+      description='Build 5-tuple firewalls and verify properties',
+      ext_modules=[module1])
