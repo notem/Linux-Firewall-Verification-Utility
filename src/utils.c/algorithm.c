@@ -1,5 +1,5 @@
 /**
- * date: 2018-03-13
+ * date: 2018-03-19
  * contributors(s):
  *   Nate Mathews, njm3308@rit.edu
  * description:
@@ -13,16 +13,13 @@
 #include <stdlib.h>
 #include "../utils.h/algorithm.h"
 
-/* SIZE is the number of fields of a rule, the number here must
-   match the number of for loops used when testing candidates */
-#define SIZE ((uint32_t) 5)
-
 // with slicing wrapper
 uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *va, uint32_t count)
 {
-    uint32_t lo_s[SIZE*count],
-             hi_s[SIZE*count],
-             va_s[count];
+    /* buffers to hold slice information */
+    uint32_t lo_s[SIZE*count], // lower-bounds of firewall rules
+             hi_s[SIZE*count], // upper-bounds of firewall rules
+             va_s[count];      // action values (ALLOW,DENY,etc)
     /* copy property to first 'rule' slot */
     va_s[0] = va[0];
     for (int k=0; k<SIZE; k++)
@@ -94,10 +91,10 @@ uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *v
 // without slicing
 uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t count)
 {
-    /* do projection and end point generation  */
-    uint32_t set[SIZE*count];
-    uint32_t indices[SIZE];
-    for (int i=0; i<SIZE; i++) indices[i] = 0;
+    /* initialize and zero arrays to represent the set of end-points */
+    uint32_t set[SIZE*count]; // set of possible end-points (fields indexed by n*count)
+    uint32_t indices[SIZE];   // size of set for each field
+    for (int i=0; i<SIZE; i++) indices[i] = 0; // zero-out indices counters
 
     /* nested for loop first projects the current field onto the property
      * then determines the end-point to add to the end point set */

@@ -1,5 +1,5 @@
 /**
- * date: 2018-03-13
+ * date: 2018-03-19
  * contributors(s):
  *   Nate Mathews, njm3308@rit.edu
  * description:
@@ -12,6 +12,10 @@
 #define IPTABLES_VERIFICATION_RULES_H
 
 #include <stdint.h>
+
+/** SIZE is the number of fields of a rule, the number here must
+   match the number of for loops used when testing candidates */
+#define SIZE ((uint32_t) 5)
 
 /**
  * divides the firewall into firewall 'slices' and projects
