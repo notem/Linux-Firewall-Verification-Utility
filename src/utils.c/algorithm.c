@@ -120,7 +120,7 @@ uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t
                 // check if value already exists in set
                 for (int j=0; j<indices[k]; j++)
                 {
-                    if (set[i*count+j] == endp)
+                    if (set[k*count+j] == endp)
                     {
                         unique = 0;
                         break;
