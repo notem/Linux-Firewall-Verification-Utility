@@ -6,7 +6,7 @@
 from distutils.core import setup, Extension
 
 module1 = Extension('firewall_verifier',
-                    sources=['src/python.c', 'src/utils.c/algorithm.c'])
+                    sources=['src/python.c', 'src/algorithm.c'])
 
 setup(name='FirewallVerifier',
       version='1.0',

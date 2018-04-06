@@ -4,7 +4,6 @@
 import firewall_verifier as fv
 import random as r
 from timeit import default_timer as timer
-import sys
 
 
 def generate_firewall(count):
@@ -23,7 +22,7 @@ def main():
     r.seed()
     print("\nBeginning firewall generation...", end="")
     start = timer()
-    generate_firewall(count=(10**5))  # firewall of 50,000 rules
+    generate_firewall(count=2*(10**4))  # firewall of 20,000 rules
     end = timer()
     print(" completed in ", end-start, "seconds")
 

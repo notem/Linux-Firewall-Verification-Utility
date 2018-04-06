@@ -90,6 +90,8 @@ uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *v
                     free(va_s);
                     return candidate;
                 }
+                pos = i;
+                break;
             }
 
             // set max position reached
