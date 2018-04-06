@@ -64,6 +64,23 @@ uint32_t* with_slicing(const uint32_t* lo, const uint32_t* hi, const uint32_t* v
  * @param count  number of property & firewall rules supplied
  * @return a witness vector or NULL, if not NULL caller is responsible for freeing witness
  */
-uint32_t* least_witness(const uint32_t* lo, const uint32_t* hi, const uint32_t* va, uint32_t count);
+uint32_t* without_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *va, uint32_t count);
+
+
+/**
+ * forms cartesian product candidate packets and compare to firewall rule list
+ * @param lo      lower bounds for firewall rules
+ *                the first FIVE elements specify the property fields
+ * @param hi      upper bounds of firewall rules
+ *                the first FIVE elements specify the property fields
+ * @param va      action value for each rule
+ *                the first ONE element specifies the property action
+ * @param count   number of property & firewall rules supplied
+ * @param set     set (as an array SIZE*count) of unique possible endpoints
+ * @param indices the number of endpoints for each field (an array of SIZE)
+ * @return a witness vector or NULL, if not NULL caller is responsible for freeing witness
+ */
+uint32_t* test_candidates(const uint32_t *lo, const uint32_t *hi, const uint32_t *va,
+                          uint32_t count, const uint32_t *set, const uint32_t *indices);
 
 #endif //IPTABLES_VERIFICATION_RULES_H

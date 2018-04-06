@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
     hi[25] = 200; hi[26] = 200; hi[27] = 0; hi[28] = 0; hi[29] = 0; va[5] = 0; // ((1,200),(1,200)) -> 0
 
     // find a witness
-    witness = with_slicing(lo, hi, va, 6);
+    witness = find_witness(lo, hi, va, 6, true);
     if (witness == NULL) printf("test 1) no witness found!\n");
     else printf("test 1) witness (%u, %u, %u, %u, %u) found!\n",
                 witness[0], witness[1], witness[2], witness[3], witness[4]);
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
     hi[0] = 87; hi[1] = 79; hi[2] = 0; hi[3] = 0; hi[4] = 0; va[0] = 0; // ((33,87),(75,79)) -> 0
 
     // no witness should be found
-    witness = with_slicing(lo, hi, va, 6);
+    witness = find_witness(lo, hi, va, 6, true);
     if (witness == NULL) printf("test 2) no witness found!\n");
     else printf("test 2) witness (%u, %u, %u, %u, %u) found!\n",
                 witness[0], witness[1], witness[2], witness[3], witness[4]);
