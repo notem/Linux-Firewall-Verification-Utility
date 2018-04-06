@@ -7,13 +7,15 @@
  *   run setup.py to build and install the python module
  */
 #include <Python.h>
-#include "utils.h/algorithm.h"
+#include "algorithm.h"
 
 /// max number of rules for starting buffers
 #define BUF_INIT 128
 
 /** buffers to hold rules and counters for rule count and current buffer maximum */
 uint32_t *lo, *hi, *va, wit[SIZE]={0,0,0,0,0}, count=1, bufmax=BUF_INIT;
+
+bool use_slicing = true;
 
 /** adds a firewall rule to the global buffers */
 static PyObject *firewall_verifier_add(PyObject *self, PyObject *args)
@@ -80,7 +82,7 @@ static PyObject *firewall_verifier_verify(PyObject *self, PyObject *args)
         return NULL;
 
     // run witness algorithm
-    uint32_t *witness = with_slicing(lo, hi, va, count);
+    uint32_t *witness = find_witness(lo, hi, va, count, use_slicing);
 
     // return 0 if no witness found
     if (witness == NULL) Py_RETURN_TRUE;

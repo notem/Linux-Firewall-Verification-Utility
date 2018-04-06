@@ -11,15 +11,24 @@
 #include <string.h>
 #include <malloc.h>
 #include <stdlib.h>
-#include "../utils.h/algorithm.h"
+#include "algorithm.h"
+
+// wrapper to easily switch between running the algorithm with|without slicing
+uint32_t* find_witness(const uint32_t *lo, const uint32_t *hi, const uint32_t *va, uint32_t count, bool slicing)
+{
+    if (slicing)
+        return with_slicing(lo, hi, va, count);
+    else
+        return least_witness(lo, hi, va, count);
+}
 
 // with slicing wrapper
 uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *va, uint32_t count)
 {
     /* buffers to hold slice information */
-    uint32_t lo_s[SIZE*count], // lower-bounds of firewall rules
-             hi_s[SIZE*count], // upper-bounds of firewall rules
-             va_s[count];      // action values (ALLOW,DENY,etc)
+    uint32_t *lo_s = malloc(sizeof(*lo_s)*SIZE*count), // lower-bounds of firewall rules
+             *hi_s = malloc(sizeof(*hi_s)*SIZE*count), // upper-bounds of firewall rules
+             *va_s = malloc(sizeof(*va_s)*SIZE*count); // action values (ALLOW,DENY,etc)
     /* copy property to first 'rule' slot */
     va_s[0] = va[0];
     for (int k=0; k<SIZE; k++)
@@ -76,6 +85,9 @@ uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *v
                 uint32_t* candidate = least_witness(lo_s, hi_s, va_s, count_s);
                 if (candidate != NULL)
                 {   // return candidate if found
+                    free(lo_s);
+                    free(hi_s);
+                    free(va_s);
                     return candidate;
                 }
             }
@@ -85,15 +97,18 @@ uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *v
                 pos = i;
         }
     }
+    free(lo_s);
+    free(hi_s);
+    free(va_s);
     return NULL;
 }
 
 // without slicing
-uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t count)
+uint32_t* least_witness(const uint32_t* lo, const uint32_t* hi, const uint32_t *va, uint32_t count)
 {
     /* initialize and zero arrays to represent the set of end-points */
-    uint32_t set[SIZE*count]; // set of possible end-points (fields indexed by n*count)
-    uint32_t indices[SIZE];   // size of set for each field
+    uint32_t *set = malloc(sizeof(*set)*SIZE*count); // set of possible end-points (fields indexed by n*count)
+    uint32_t *indices = malloc(sizeof(*set)*SIZE);   // size of set for each field
     for (int i=0; i<SIZE; i++) indices[i] = 0; // zero-out indices counters
 
     /* nested for loop first projects the current field onto the property
@@ -102,17 +117,17 @@ uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t
     {
         uint32_t p = i*SIZE; // offset of rule start
         for (int k=0; k<SIZE; k++)  // for each field in rule
-        {   /* do projection */
+        {   /* do projection (save points in temporary elements) */
             uint32_t z = p+k;   // current position
-            hi[z] = (hi[z] < hi[k]) ? hi[z] : hi[k]; // set hi to min
-            lo[z] = (lo[z] < lo[k]) ? lo[k] : lo[z]; // set lo to max
+            uint32_t hi_tmp = (hi[z] < hi[k]) ? hi[z] : hi[k]; // set hi to min
+            uint32_t lo_tmp = (lo[z] < lo[k]) ? lo[k] : lo[z]; // set lo to max
 
             /* calculate end-point */
             uint32_t endp, unique=1;
             if (va[i] == va[0])
-                endp = hi[z]+1;
+                endp = hi_tmp+1;
             else
-                endp = lo[z];
+                endp = lo_tmp;
 
             // only add to set if end-point is within the property range
             if (endp <= hi[k] && endp >= lo[k])
@@ -163,7 +178,11 @@ uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t
                             if (hit)
                             {   // if the matched rule conflicts, witness has been found
                                 if (va[0] != va[i])
+                                {
+                                    free(set);
+                                    free(indices);
                                     return candidate;
+                                }
                                 break; // otherwise, move to next candidate
                             }
                         }
@@ -174,5 +193,7 @@ uint32_t* least_witness(uint32_t* lo, uint32_t* hi, const uint32_t *va, uint32_t
     }
     // no witness found
     free(candidate);
+    free(set);
+    free(indices);
     return NULL;
 }

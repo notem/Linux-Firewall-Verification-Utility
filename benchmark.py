@@ -23,7 +23,7 @@ def main():
     r.seed()
     print("\nBeginning firewall generation...", end="")
     start = timer()
-    generate_firewall(count=5*(10**4))  # firewall of 50,000 rules
+    generate_firewall(count=(10**5))  # firewall of 50,000 rules
     end = timer()
     print(" completed in ", end-start, "seconds")
 
@@ -63,4 +63,4 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.settrace(main())
+    main()
