@@ -6,7 +6,7 @@ import random as r
 from timeit import default_timer as timer
 
 # tweak-able parameters
-trials = 30
+trials = 1000
 rules = 10**5
 
 
@@ -66,10 +66,17 @@ def main():
         times.append(end-start)
         print(times[i], "seconds")
 
+    # find max time taken
+    time_max = 0
+    for time in times:
+        if time_max > time:
+            time_max = time
+    # calculate average
     avg = 0
     for time in times:
         avg += time
     avg /= trials
+    print("\n[max]: ", time_max, "seconds")
     print("\n[average]: ", avg, "seconds")
     return
 

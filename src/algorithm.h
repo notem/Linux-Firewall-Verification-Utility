@@ -81,6 +81,7 @@ uint32_t* without_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t
  * @return a witness vector or NULL, if not NULL caller is responsible for freeing witness
  */
 uint32_t* test_candidates(const uint32_t *lo, const uint32_t *hi, const uint32_t *va,
-                          uint32_t count, const uint32_t *set, const uint32_t *indices);
+                          uint32_t count, const uint32_t *set, const uint32_t *indices,
+                          const uint32_t *mask);
 
 #endif //IPTABLES_VERIFICATION_RULES_H
