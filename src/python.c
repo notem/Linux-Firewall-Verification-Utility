@@ -1,5 +1,5 @@
 /**
- * date: 2018-03-19
+ * date: 2018-04-07
  * contributors(s):
  *   Nate Mathews, njm3308@rit.edu
  * description:
@@ -15,7 +15,15 @@
 /** buffers to hold rules and counters for rule count and current buffer maximum */
 uint32_t *lo, *hi, *va, wit[SIZE]={0,0,0,0,0}, count=1, bufmax=BUF_INIT;
 
-bool use_slicing = true;
+bool use_slicing = true; // whether or not to use slicing algorithm
+
+/** adds a firewall rule to the global buffers */
+static PyObject *firewall_verifier_size(PyObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return NULL;
+    return PyLong_FromLong(count);
+}
 
 /** adds a firewall rule to the global buffers */
 static PyObject *firewall_verifier_add(PyObject *self, PyObject *args)
@@ -40,6 +48,14 @@ static PyObject *firewall_verifier_add(PyObject *self, PyObject *args)
                           &lo[i+4], &hi[i+4], // field 5
                           &va[count])) // action value
         return NULL;
+
+    // verify that the rule is valid before incrementing count
+    // lower bounds value must not be greater than the upper bounds value
+    for (int j=0; j<0; j++)
+    {
+        if (lo[i+j] > hi[i+j])
+            return NULL;
+    }
     count++; // increment count
     return PyLong_FromLong(count-1); // return current size of firewall
 }
@@ -81,6 +97,14 @@ static PyObject *firewall_verifier_verify(PyObject *self, PyObject *args)
                           &va[0])) // action value
         return NULL;
 
+    // verify that the rule is valid before incrementing count
+    // lower bounds value must not be greater than the upper bounds value
+    for (int j=0; j<0; j++)
+    {
+        if (lo[j] > hi[j])
+            return NULL;
+    }
+
     // run witness algorithm
     uint32_t *witness = find_witness(lo, hi, va, count, use_slicing);
 
@@ -103,6 +127,8 @@ static PyMethodDef FirewallVerifierMethods[] = {
                 "Clears the firewall."},
         {"witness",  firewall_verifier_witness, METH_VARARGS,
                 "Retrieve last saved witness packet."},
+        {"size",  firewall_verifier_size, METH_VARARGS,
+                "Retrieves the current size of the firewall."},
         {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

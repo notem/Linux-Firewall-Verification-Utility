@@ -1,5 +1,5 @@
 /**
- * date: 2018-03-19
+ * date: 2018-04-07
  * contributors(s):
  *   Nate Mathews, njm3308@rit.edu
  * description:
@@ -84,7 +84,7 @@ uint32_t* with_slicing(const uint32_t *lo, const uint32_t *hi, const uint32_t *v
             }
 
             /* if next disagree rule has been reached -> do
-             * add to slice, project slice, run without_slicing */
+             * add to slice, project slice, do cartesian product testing*/
             if (va[i] != va[0] && i > pos)
             {
                 /* initialize and zero arrays to represent the set of end-points */

@@ -2,10 +2,11 @@
 #
 # example usage of firewall_verifier
 #   module functions:
-#       add(rule)    -> int
+#       add(rule)    -> number
 #       verify(prop) -> bool
 #       witness()    -> 5tuple
-#       clear()      -> int
+#       clear()      -> number
+#       size()       -> number
 #
 import firewall_verifier as fv
 
