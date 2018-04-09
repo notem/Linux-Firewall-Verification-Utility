@@ -1,32 +1,37 @@
 #!/usr/bin/env python3
 
+# date: 2018-04-09
+# contributor(s):
+#	Michael Rhodes, mjr2563@rit.edu
+# description:
+#	
+# usage:
+#
+
+
+import firewall_verifier as fv
 from ipaddress import IPv4Address,IPv4Network
 from socket import getprotobyname
 # from subprocess import check_output
 from sys import argv,exit
-
-# Checking for:
-#	sourceIP, destIP, sourcePort, destPort, chain, protocol, and target
+from os import path
 
 
 # TODO: Check if algorithm can handle more than 1/0 for the policy
-#	parse command-line arguments
-#	come up with an elegant way to work with subprocess and file reading
-#	clean up comments
-#	check for 'all' protocols
+#	clean up comments, create usage statement
+#	print more information when a witness packet is found
 
 
 #possible problems:
-#	how does iptables-save handle inserting and replacing rules (-I and -R)?
-#		will our script have to replace/reorder the rules?
-#	how should we handle rules with a goto [chain] instead of jump [targer]?
-#	IPv6? at the very least, we should ignore the ipv6 rules
+#	how should we handle rules with a goto [chain] instead of jump [target]?
+
 
 
 
 ################################################
 #### iptables syntax and available options
 ################################################
+
 #### Chains ####
 # -A, --append
 chains = ['-A','--append']
@@ -57,15 +62,18 @@ daddresses = ['-d', '--destination', '-dst', '--dst-range']
 protocols = ['-p', '--protocols']
 
 
-
 ######################################
 ### Functions
 ######################################
 
-### parse rule
-# assumes chain has already been checked
+### Usage Statement
+def usage():
+  exit(1)
+
+### parseRule
 # returns a LIST containing the tuples derived from the rule
 #	a list is used because a single rule might expand into several
+# assumes chain has already been checked
 def parseRule(rule):
   rule = rule.rstrip('\r\n').split(" ")
  # min/max values for each tuple
@@ -81,7 +89,6 @@ def parseRule(rule):
   protoMax = 255
   rules = [] 		# stores all created rules, returned on exit
   
-
  # iterate of rule to extract ranges
   i = 0
   while i < len(rule):
@@ -125,10 +132,11 @@ def parseRule(rule):
       continue
 
    # check for protocol
-   # TODO determine best way to efficiently store and update protocols/numbers
     if any(j == rule[i] for j in protocols):
       i = i + 2
       try:
+#        if (rule[i-1] == "all"): continue
+#		-p all can be used to create rules but its omitted in iptables-save
         p = int(rule[i-1])
       except:
         p = getprotobyname(rule[i-1])
@@ -190,27 +198,67 @@ def parseRule(rule):
   return rules
 
 
-### parse iptables-save output
-def parseIPtables(f, chain):
+### extractRules
+# given a file and a chain, it parses each line and adds rules that correspond to
+# the given chain to the firewall verification object
+# f - file pointer
+# chain - name of the chain to look at
+def extractRules(f, chain):
   defaultPolicy = ""
-  for i in f:
+  for i in f:	# read each line in the file
     if (i[0] == '-'): # line contains a rule
-      if (chain in i):
-        rules = parseRule(i)
+      if (chain in i.split(' ')):
+        rules = parseRule(i)	# returns a list of rule tuples
         for r in rules:
-          print (r) #TODO add rule to fv
+          fv.add(r)		# add rules to verifier
+          print("DEBUG: ",r)
     elif (i[0] == ':'): # line defines a chain
-      if (chain in i): 
+      if (":"+chain in i.split(' ')): 
         defaultPolicy = i.split(" ")[1] 
         if (defaultPolicy=='ACCEPT'): defaultPolicy = 1  
         else: defaultPolicy=0
   if (defaultPolicy == ""):
-    exit("Can't find a default policy for '"+chain+"'")
+    print("Can't find a default policy for '"+chain+"'")
+    usage()
+  fv.add(((0,4294967295),(1,65535),(0,4294967295),(1,65535),(0,255),defaultPolicy))
 
 
-### test code
-with open ("rules.txt") as f: #iptables-save > rules.txt
-  parseIPtables(f, "INPUT")
+### parse command line arguments
+fileArgs = ['-file','-infile']
+ruleFile = ""
+chain = ""
+targetPresent = False
+argv = argv[1:]
+for i in range(len(argv)):
+  if (any(j == argv[i] for j in chains)):	# check for chain
+    chain = argv[i+1]
+  if (any(j == argv[i] for j in fileArgs)):	# check for file
+    ruleFile = argv[i+1]
+  if (any(j == argv[i] for j in targets)):	# check for target
+    targetPresent = True
+if (chain == ""):
+  print("ERROR: Cannot find chain.\nUse -A or --append to specify the chain.")
+  usage()
+if (ruleFile == ""):
+  print("ERROR: No rule file specified.\nUse -file or -infile to specify the rule file.")
+  usage()
+if (not targetPresent):
+  print("ERROR: No target specified\nUse -j or --jump to specify the target")
+  usage()
+
+if (not path.exists(ruleFile)):			# check if file exists
+  print("Cannot find the file : "+ruleFile)
+  usage()
+
+### parse file, create tuples, and check for witness
+with open (ruleFile) as f: #iptables-save > rules.txt
+  extractRules(f, chain)
+  policy = parseRule(" ".join(argv))
+  for i in policy: # looped to account for the possibility of multiple rules
+    if (not fv.verify(i)):
+      print ("--> Witness found:",fv.witness())
+      exit()
+  print("--> Property passes!")
 
 
 
