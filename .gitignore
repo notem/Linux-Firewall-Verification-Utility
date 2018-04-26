@@ -1,5 +1,4 @@
 
 .idea/
-cmake-build-debug/
-/src/build/
+/module/build/
 /build/

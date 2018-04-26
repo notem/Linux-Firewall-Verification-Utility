@@ -1,4 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# date: 2018-04-25
+# contributor(s):
+#	Nate Mathews, njm3308@rit.edu
+# description:
 #   simple script to benchmark the algorithm's performance
 #
 import firewall_verifier as fv
