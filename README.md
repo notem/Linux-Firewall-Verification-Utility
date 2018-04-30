@@ -13,13 +13,13 @@ This project consists of two-parts:
 
 ## Python Module Installation
 
-1) run ``module/setup.py build``
-2) run ``module/setup.py install``
-3) add ``import firewall_verifier`` to python 3 script
+1) run ``module/setup.py build`` to build the python module
+2) run ``module/setup.py install`` to install the python module (may need administrative priveledges)
+3) add ``import firewall_verifier`` to python 3 script to include the module
 
 ## Using ``fverify.py``
 
-1) Install the ``firewall_verifier``
+1) Install the ``firewall_verifier`` python module (see above)
 2) Export your netfilter filter settings using the *iptables-save* command
     * (optional) remove rules using unsupported fields
     * Ex. ``iptables-save > firewall.txt``
@@ -30,12 +30,14 @@ This project consists of two-parts:
     
 ## Contributing
 
+If you're interested in contributing we recommend one of the following actions...
+
 * make a pull request
-* contact an original contributor
+* contact a contributor
 * fork and do it better
 
 ### Modifying Module Source
 
 A small test program, implemented in C, is provided to allow a developer to more easily diagnose errors.
 This program can be compiled using the ``cmake`` utility. 
-Don't rely to heavily on the test program, it is no where near exhaustive.
+Don't rely to heavily on the test program, it is not exhaustive (or extensive, or particularly valuable).
